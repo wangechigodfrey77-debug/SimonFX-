@@ -58,7 +58,7 @@ export default function Sidebar({ activeTab, setActiveTab, settings, updateSetti
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg tracking-tight text-white leading-tight">
-              ForexForge<span className="text-emerald-400 font-medium">.</span>
+              SimonFX<span className="text-emerald-400 font-medium">.</span>
             </h1>
             <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">
               Trade Performance Journal

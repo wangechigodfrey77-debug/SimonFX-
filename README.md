@@ -1,6 +1,6 @@
-# ForexForge Journal
+# SimonFX Journal
 
-ForexForge Journal is a premium, professional-grade, full-stack ready Forex trading journal with deep analytical tracking, interactive equity curves, position size calculators, and multi-chart dashboards.
+SimonFX Journal is a premium, professional-grade, full-stack ready Forex trading journal with deep analytical tracking, interactive equity curves, position size calculators, and multi-chart dashboards.
 
 ## Feature Set
 

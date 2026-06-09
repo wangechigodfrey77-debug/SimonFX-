@@ -148,7 +148,7 @@ export default function App() {
       {/* MOBILE HEADER/NAVIGATION BAR */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-zinc-950 border-b border-zinc-900 px-6 flex items-center justify-between z-30 select-none">
         <span className="font-sans font-bold text-base text-white tracking-tight">
-          ForexForge<span className="text-emerald-400 font-medium">.</span>
+          SimonFX<span className="text-emerald-400 font-medium">.</span>
         </span>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}

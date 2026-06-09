@@ -1,0 +1,6 @@
+{
+  "name": "ForexForge Journal",
+  "description": "A premium, professional-grade Forex Trade Journal web application featuring rich analytics, equity curve charts, a risk calculator, strategy insights, and screenshot tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -23,65 +23,11 @@ import TradeEntryModal from './components/TradeEntryModal';
 import AnalyticsReports from './components/AnalyticsReports';
 import RiskCalculator from './components/RiskCalculator';
 
-const LOCAL_STORAGE_KEY = 'forexforge_trade_journal';
-const SETTINGS_STORAGE_KEY = 'forexforge_user_settings';
+const LOCAL_STORAGE_KEY = 'simonfx_trade_journal';
+const SETTINGS_STORAGE_KEY = 'simonfx_user_settings';
 
-// Realistic starter trading seed data
-const DEFAULT_TRADES_SEED: Trade[] = [
-  {
-    id: 'tr_e7u1a8',
-    pair: 'EURUSD',
-    direction: 'BUY',
-    entryPrice: 1.08250,
-    lotSize: 0.50,
-    sl: 1.07950,
-    tp: 1.09150,
-    entryTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 - 3 * 3600 * 1000).toISOString(),
-    strategy: 'Order Block / Smart Money Concepts (SMC)',
-    tags: ['A-Setup', 'New York Session', 'Scalp'],
-    status: 'CLOSED',
-    exitPrice: 1.08950,
-    exitTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    pnl: 350.00, // (1.08950 - 1.08250) * 0.5 * 100000 = $350.00
-    notes: 'Re-entry at the 15-minute bullish Order Block. Confirmed with shift in market structure (MSS) on 1m chart. Stop loss rested below key swing low.',
-    screenshotsBefore: [],
-    screenshotsAfter: []
-  },
-  {
-    id: 'tr_y8k3p1',
-    pair: 'GBPJPY',
-    direction: 'SELL',
-    entryPrice: 191.800,
-    lotSize: 0.20,
-    sl: 192.200,
-    tp: 190.500,
-    entryTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 5 * 3600 * 1000).toISOString(),
-    strategy: 'Support & Resistance Breakout',
-    tags: ['London Session'],
-    status: 'CLOSED',
-    exitPrice: 192.150,
-    exitTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    pnl: -45.16, // (191.80 - 192.15) * 0.2 * 100k / 155 approx
-    notes: 'Incorrectly anticipated bearish breakout below major 191.80 level. Stunned by sudden spike at Tokyo session open. Stopped out with small loss.',
-    screenshotsBefore: [],
-    screenshotsAfter: []
-  },
-  {
-    id: 'tr_q9l5z2',
-    pair: 'XAUUSD',
-    direction: 'BUY',
-    entryPrice: 2320.50,
-    lotSize: 0.15,
-    sl: 2310.00,
-    tp: 2350.00,
-    entryTime: new Date(Date.now() - 10 * 3600 * 1000).toISOString(),
-    strategy: 'Fibonacci Retracement Bounce',
-    tags: ['Intraday', 'New York Session'],
-    status: 'OPEN',
-    screenshotsBefore: [],
-    screenshotsAfter: []
-  }
-];
+// No seed data for live deployment
+const DEFAULT_TRADES_SEED: Trade[] = [];
 
 const DEFAULT_SETTINGS: UserSettings = {
   userName: 'Prop Trader',

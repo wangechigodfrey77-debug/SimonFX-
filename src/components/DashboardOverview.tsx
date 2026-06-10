@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -13,7 +13,9 @@ import {
   Coins,
   ShieldCheck,
   CalendarDays,
-  Target
+  Target,
+  X,
+  Pencil
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -35,12 +37,49 @@ interface DashboardOverviewProps {
   settings: UserSettings;
   onAddTradeClick: () => void;
   setActiveTab: (tab: any) => void;
+  updateSettings: (newSettings: UserSettings) => void;
+  userRole?: 'admin' | 'viewer' | null;
 }
 
-export default function DashboardOverview({ trades, settings, onAddTradeClick, setActiveTab }: DashboardOverviewProps) {
+export default function DashboardOverview({ trades, settings, onAddTradeClick, setActiveTab, updateSettings, userRole = 'viewer' }: DashboardOverviewProps) {
   const stats = calculateTradeStats(trades, settings.startingBalance);
   const closedTrades = trades.filter(t => t.status === 'CLOSED');
   const openTrades = trades.filter(t => t.status === 'OPEN');
+
+  const [isEditingEquity, setIsEditingEquity] = useState(false);
+  const [equityValueInput, setEquityValueInput] = useState('');
+  const [editMode, setEditMode] = useState<'equity' | 'starting'>('equity');
+
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'KES': return 'Ksh ';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      case 'CAD': return 'C$';
+      case 'AUD': return 'A$';
+      case 'CHF': return '₣';
+      default: return '$';
+    }
+  };
+
+  const handleSaveEquity = () => {
+    const val = parseFloat(equityValueInput);
+    if (isNaN(val) || val <= 0) return;
+
+    let targetStartingBalance = val;
+    if (editMode === 'equity') {
+      targetStartingBalance = val - stats.totalPnl;
+    }
+
+    updateSettings({
+      ...settings,
+      startingBalance: Math.max(1, Number(targetStartingBalance.toFixed(2)))
+    });
+    
+    setIsEditingEquity(false);
+  };
 
   // Format currency values nicely
   const formatCurrency = (val: number) => {
@@ -158,14 +197,16 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
               <span>{openTrades.length} Active Trade{openTrades.length === 1 ? '' : 's'}</span>
             </div>
           )}
-          <button
-            onClick={onAddTradeClick}
-            id="dashboard-new-trade-btn"
-            className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all duration-150 cursor-pointer shadow-md shadow-emerald-500/5 hover:-translate-y-0.5"
-          >
-            <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
-            <span>New Trade Entry</span>
-          </button>
+          {userRole === 'admin' && (
+            <button
+              onClick={onAddTradeClick}
+              id="dashboard-new-trade-btn"
+              className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-all duration-150 cursor-pointer shadow-md shadow-emerald-500/5 hover:-translate-y-0.5"
+            >
+              <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+              <span>New Trade Entry</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -178,8 +219,23 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
             <div className={`text-2xl font-bold flex items-baseline gap-1.5 ${stats.totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               <span>{stats.totalPnl >= 0 ? '+' : ''}{formatCurrency(stats.totalPnl)}</span>
             </div>
-            <div className="text-[11px] text-zinc-500 font-medium">
-              Current account equity: <span className="text-zinc-300 font-semibold">{formatCurrency(settings.startingBalance + stats.totalPnl)}</span>
+            <div className="text-[11px] text-zinc-500 font-medium flex items-center gap-1.5">
+              <span>Current account equity:</span>
+              <span className="text-zinc-300 font-semibold">{formatCurrency(settings.startingBalance + stats.totalPnl)}</span>
+              {userRole === 'admin' && (
+                <button 
+                  onClick={() => {
+                    setEditMode('equity');
+                    setEquityValueInput((settings.startingBalance + stats.totalPnl).toString());
+                    setIsEditingEquity(true);
+                  }}
+                  className="p-1 text-zinc-500 hover:text-white hover:bg-zinc-900 rounded transition-colors inline-flex items-center gap-1 shrink-0 cursor-pointer"
+                  title="Adjust Account Equity / Starting Balance"
+                  id="edit-equity-btn"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
             </div>
           </div>
           <div className={`p-3 rounded-xl z-10 transition-colors ${stats.totalPnl >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
@@ -320,12 +376,14 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
               Your growth curve charts and monthly profit stats will populate automatically as you add and close trades in the journal.
             </p>
           </div>
-          <button
-            onClick={onAddTradeClick}
-            className="bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all"
-          >
-            Create Your First Entry
-          </button>
+          {userRole === 'admin' && (
+            <button
+              onClick={onAddTradeClick}
+              className="bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-zinc-800 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all"
+            >
+              Create Your First Entry
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -417,6 +475,123 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditingEquity && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-xs font-sans">
+          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl w-full max-w-md p-6 space-y-6 relative shadow-2xl">
+            <button 
+              onClick={() => setIsEditingEquity(false)}
+              className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Coins className="h-5 w-5 text-emerald-400" />
+                <span>Adjust Account Balance / Equity</span>
+              </h3>
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Customize your seed capital or update your active equity to synchronize with your prop firm or broker.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Mode Selector */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-900 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditMode('equity');
+                    setEquityValueInput((settings.startingBalance + stats.totalPnl).toFixed(2));
+                  }}
+                  className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+                    editMode === 'equity'
+                      ? 'bg-zinc-800 text-white shadow font-semibold'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Edit Current Equity
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditMode('starting');
+                    setEquityValueInput(settings.startingBalance.toString());
+                  }}
+                  className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+                    editMode === 'starting'
+                      ? 'bg-zinc-800 text-white shadow font-semibold'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Edit Starting Bal.
+                </button>
+              </div>
+
+              {/* Input Form */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  {editMode === 'equity' ? 'Desired Current Equity' : 'Starting Seed Balance'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 font-medium text-xs font-mono">
+                    {getCurrencySymbol(settings.baseCurrency)}
+                  </span>
+                  <input
+                    type="number"
+                    value={equityValueInput}
+                    onChange={(e) => setEquityValueInput(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono"
+                    placeholder="Enter amount"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic Helper Math explanation box */}
+              <div className="bg-zinc-900/40 border border-zinc-900 p-3 rounded-xl space-y-1 text-[11px] text-zinc-400 leading-normal">
+                <p className="font-semibold text-zinc-300 flex items-center gap-1">
+                  <span>Mathematical Impact:</span>
+                </p>
+                {editMode === 'equity' ? (
+                  <p>
+                    Closed trade P/L is <span className={`font-semibold ${stats.totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(stats.totalPnl)}</span>. 
+                    Adjusting current equity to <span className="text-white font-semibold">{formatCurrency(parseFloat(equityValueInput) || 0)}</span> will recalculate your base starting seed balance to{' '}
+                    <span className="text-emerald-400 font-semibold">
+                      {formatCurrency((parseFloat(equityValueInput) || 0) - stats.totalPnl)}
+                    </span>.
+                  </p>
+                ) : (
+                  <p>
+                    Changing your starting seed to <span className="text-white font-semibold">{formatCurrency(parseFloat(equityValueInput) || 0)}</span> will result in a new calculated current account equity of{' '}
+                    <span className="text-emerald-400 font-semibold">
+                      {formatCurrency((parseFloat(equityValueInput) || 0) + stats.totalPnl)}
+                    </span>.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleSaveEquity}
+                className="flex-1 py-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Apply Adjustment
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditingEquity(false)}
+                className="flex-1 py-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-850 text-zinc-300 border border-zinc-800/80 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

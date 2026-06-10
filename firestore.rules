@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helper primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper validation for string IDs
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Helper validation for UserSettings
+    function isValidUserSettings(data) {
+      return data.userName is string && data.userName.size() <= 100
+          && data.baseCurrency is string && data.baseCurrency.size() <= 10
+          && data.startingBalance is number && data.startingBalance >= 0
+          && data.keys().hasAll(['userName', 'baseCurrency', 'startingBalance'])
+          && data.keys().size() == 3;
+    }
+
+    // Helper validation for Trade
+    function isValidTrade(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.pair is string && data.pair.size() <= 32
+          && (data.direction == 'BUY' || data.direction == 'SELL')
+          && data.entryPrice is number && data.entryPrice >= 0
+          && data.lotSize is number && data.lotSize >= 0
+          && data.tp is number && data.tp >= 0
+          && data.sl is number && data.sl >= 0
+          && data.entryTime is string && data.entryTime.size() <= 64
+          && data.strategy is string && data.strategy.size() <= 200
+          && data.tags is list && data.tags.size() <= 30
+          && (data.status == 'OPEN' || data.status == 'CLOSED')
+          && (!('exitPrice' in data) || data.exitPrice is number)
+          && (!('exitTime' in data) || data.exitTime is string)
+          && (!('pnl' in data) || data.pnl is number)
+          && data.screenshotsBefore is list && data.screenshotsBefore.size() <= 10
+          && data.screenshotsAfter is list && data.screenshotsAfter.size() <= 10
+          && (!('notes' in data) || data.notes is string && data.notes.size() <= 5000);
+    }
+
+    // Whitelist rules helpers
+    function isWhitelisted(email) {
+      return exists(/databases/$(database)/documents/whitelist/$(email));
+    }
+
+    function getWhitelistData(email) {
+      return get(/databases/$(database)/documents/whitelist/$(email)).data;
+    }
+
+    function isWhitelistedAndAdmin() {
+      return isSignedIn() 
+        && request.auth.token.email != null 
+        && (
+          request.auth.token.email == 'wangechigodfrey77@gmail.com'
+          || (
+            isWhitelisted(request.auth.token.email)
+            && 'role' in getWhitelistData(request.auth.token.email)
+            && getWhitelistData(request.auth.token.email).role == 'admin'
+          )
+        );
+    }
+
+    function isWhitelistedAndViewer() {
+      return isSignedIn() 
+        && request.auth.token.email != null 
+        && isWhitelisted(request.auth.token.email)
+        && 'role' in getWhitelistData(request.auth.token.email)
+        && getWhitelistData(request.auth.token.email).role == 'viewer';
+    }
+
+    // Whitelist collection rules
+    match /whitelist/{email} {
+      // Whitelisted admins can read, create, update, delete all whitelist entries
+      allow read, write: if isWhitelistedAndAdmin();
+      // Any authenticated user can fetch their own whitelist record
+      allow get: if isSignedIn() 
+        && request.auth.token.email != null
+        && request.auth.token.email == email;
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId) && (isWhitelistedAndAdmin() || isWhitelistedAndViewer());
+      allow create: if isOwner(userId) && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
+      allow update: if isOwner(userId) && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
+      allow delete: if isOwner(userId) && isWhitelistedAndAdmin();
+
+      // Subcollection: Trades
+      match /trades/{tradeId} {
+        allow get, list: if isOwner(userId) && (isWhitelistedAndAdmin() || isWhitelistedAndViewer());
+        
+        allow create: if isOwner(userId) 
+          && isWhitelistedAndAdmin()
+          && isValidId(tradeId)
+          && isValidTrade(request.resource.data);
+
+        allow update: if isOwner(userId)
+          && isWhitelistedAndAdmin()
+          && isValidTrade(request.resource.data);
+
+        allow delete: if isOwner(userId) && isWhitelistedAndAdmin();
+      }
+    }
+  }
+}

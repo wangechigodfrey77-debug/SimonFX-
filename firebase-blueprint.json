@@ -1,0 +1,120 @@
+{
+  "entities": {
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "Preferences and portfolio capital config of a trader profile",
+      "type": "object",
+      "properties": {
+        "userName": {
+          "type": "string",
+          "description": "The custom display name of the trader"
+        },
+        "baseCurrency": {
+          "type": "string",
+          "description": "The functional currency of the account (e.g. USD, EUR, KES)"
+        },
+        "startingBalance": {
+          "type": "number",
+          "description": "The initial capital value Reference"
+        }
+      },
+      "required": ["userName", "baseCurrency", "startingBalance"]
+    },
+    "Trade": {
+      "title": "Trade Entries",
+      "description": "Individual closed or open Forex trade journal entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "pair": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["BUY", "SELL"]
+        },
+        "entryPrice": {
+          "type": "number"
+        },
+        "lotSize": {
+          "type": "number"
+        },
+        "tp": {
+          "type": "number"
+        },
+        "sl": {
+          "type": "number"
+        },
+        "entryTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["OPEN", "CLOSED"]
+        },
+        "exitPrice": {
+          "type": "number"
+        },
+        "exitTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "pnl": {
+          "type": "number"
+        },
+        "screenshotsBefore": {
+          "type": "array"
+        },
+        "screenshotsAfter": {
+          "type": "array"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "pair", "direction", "entryPrice", "lotSize", "tp", "sl", "entryTime", "strategy", "status", "screenshotsBefore", "screenshotsAfter"]
+    },
+    "WhitelistEntry": {
+      "title": "Whitelist Entry",
+      "description": "Definition of whitelisted email and role level (admin vs viewer)",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "viewer"]
+        },
+        "addedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserSettings",
+      "description": "User specific configuration profiles"
+    },
+    "/users/{userId}/trades/{tradeId}": {
+      "schema": "Trade",
+      "description": "Subcollection of journalled trades for a user"
+    },
+    "/whitelist/{email}": {
+      "schema": "WhitelistEntry",
+      "description": "Whitelist of accounts permitted to access the system"
+    }
+  }
+}

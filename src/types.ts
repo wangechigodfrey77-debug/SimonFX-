@@ -29,4 +29,4 @@ export interface UserSettings {
   userName: string;
 }
 
-export type ActiveTab = 'dashboard' | 'trades' | 'analytics' | 'calculator';
+export type ActiveTab = 'dashboard' | 'trades' | 'analytics' | 'calculator' | 'whitelist';

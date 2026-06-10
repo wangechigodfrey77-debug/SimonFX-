@@ -35,9 +35,10 @@ interface TradeListProps {
   onDeleteTrade: (id: string) => void;
   onCloseTrade: (id: string, exitPrice: number, exitTime: string, pnl: number) => void;
   onAddTradeClick: () => void;
+  userRole?: 'admin' | 'viewer' | null;
 }
 
-export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade, onCloseTrade, onAddTradeClick }: TradeListProps) {
+export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade, onCloseTrade, onAddTradeClick, userRole = 'viewer' }: TradeListProps) {
   // Search & Filter state variables
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
@@ -172,12 +173,14 @@ export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade
           </p>
         </div>
 
-        <button
-          onClick={onAddTradeClick}
-          className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold px-5 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all self-start md:self-auto cursor-pointer"
-        >
-          <span>+</span> Record Position
-        </button>
+        {userRole === 'admin' && (
+          <button
+            onClick={onAddTradeClick}
+            className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold px-5 py-2.5 rounded-lg text-xs flex items-center gap-1.5 transition-all self-start md:self-auto cursor-pointer"
+          >
+            <span>+</span> Record Position
+          </button>
+        )}
       </div>
 
       {/* FILTER CONTROLS BAR */}
@@ -386,42 +389,50 @@ export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade
                       {/* Actions */}
                       <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-2">
-                          {/* Close Position Fast Button */}
-                          {trade.status === 'OPEN' && (
-                            <button
-                              onClick={() => {
-                                setClosingTradeId(trade.id);
-                                setCloseExitPrice(trade.entryPrice.toString());
-                                const now = new Date();
-                                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                                setCloseExitTime(now.toISOString().substring(0, 16));
-                              }}
-                              className="px-2 py-1 bg-amber-500 text-zinc-950 font-bold rounded hover:bg-amber-400 text-[10px]"
-                              title="Instant Close Position"
-                            >
-                              Close
-                            </button>
-                          )}
-                          
-                          <button
-                            onClick={() => onEditTrade(trade)}
-                            className="p-1.5 text-zinc-455 hover:text-white hover:bg-zinc-900 rounded"
-                            title="Edit"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                          </button>
+                          {userRole === 'admin' ? (
+                            <>
+                              {/* Close Position Fast Button */}
+                              {trade.status === 'OPEN' && (
+                                <button
+                                  onClick={() => {
+                                    setClosingTradeId(trade.id);
+                                    setCloseExitPrice(trade.entryPrice.toString());
+                                    const now = new Date();
+                                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                                    setCloseExitTime(now.toISOString().substring(0, 16));
+                                  }}
+                                  className="px-2 py-1 bg-amber-500 text-zinc-950 font-bold rounded hover:bg-amber-400 text-[10px] cursor-pointer"
+                                  title="Instant Close Position"
+                                >
+                                  Close
+                                </button>
+                              )}
+                              
+                              <button
+                                onClick={() => onEditTrade(trade)}
+                                className="p-1.5 text-zinc-455 hover:text-white hover:bg-zinc-900 rounded cursor-pointer"
+                                title="Edit"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
 
-                          <button
-                            onClick={() => {
-                              if (window.confirm('Delete this trade record? This action is permanent.')) {
-                                onDeleteTrade(trade.id);
-                              }
-                            }}
-                            className="p-1.5 text-zinc-455 hover:text-rose-400 hover:bg-zinc-900 rounded"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm('Delete this trade record? This action is permanent.')) {
+                                    onDeleteTrade(trade.id);
+                                  }
+                                }}
+                                className="p-1.5 text-zinc-455 hover:text-rose-400 hover:bg-zinc-900 rounded cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[10px] bg-zinc-900 text-zinc-550 border border-zinc-900/50 px-2 py-0.5 rounded font-medium uppercase tracking-wider">
+                              View Only
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -548,19 +559,21 @@ export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      onEditTrade(inspectedTrade);
-                      setInspectedTrade(null);
-                    }}
-                    className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 rounded"
-                    title="Edit Record"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
+                  {userRole === 'admin' && (
+                    <button
+                      onClick={() => {
+                        onEditTrade(inspectedTrade);
+                        setInspectedTrade(null);
+                      }}
+                      className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 rounded cursor-pointer"
+                      title="Edit Record"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  )}
                   <button 
                     onClick={() => setInspectedTrade(null)}
-                    className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 rounded"
+                    className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 rounded cursor-pointer"
                   >
                     <X className="h-4.5 w-4.5" />
                   </button>

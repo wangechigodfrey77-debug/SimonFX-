@@ -164,7 +164,7 @@ export default function App() {
       return;
     }
 
-    const userId = currentUser.uid;
+    const userId = 'shared';
     setIsSyncing(true);
 
     // Sync Settings document
@@ -184,9 +184,9 @@ export default function App() {
           }
         }
         
-        // Auto-fill Name from Google Details if default is empty or generic
-        if (currentUser.displayName && (!settingsToUpload.userName || settingsToUpload.userName === 'Trader' || settingsToUpload.userName === 'Prop Trader')) {
-          settingsToUpload.userName = currentUser.displayName;
+        // Use a standard default of Prop Trader for the collaborative shared view
+        if (!settingsToUpload.userName || settingsToUpload.userName === 'Trader') {
+          settingsToUpload.userName = 'Prop Trader';
         }
 
         setDoc(settingsDocRef, settingsToUpload)
@@ -268,7 +268,7 @@ export default function App() {
   // Update Settings (Firestore synchronizes back via onSnapshot)
   const updateSettings = async (newSettings: UserSettings) => {
     if (currentUser) {
-      const userId = currentUser.uid;
+      const userId = 'shared';
       try {
         await setDoc(doc(db, 'users', userId), newSettings);
       } catch (err) {
@@ -283,7 +283,7 @@ export default function App() {
   // Save Trade Record (Create or Update)
   const handleSaveTrade = async (trade: Trade) => {
     if (currentUser) {
-      const userId = currentUser.uid;
+      const userId = 'shared';
       try {
         await setDoc(doc(db, 'users', userId, 'trades', trade.id), trade);
       } catch (err) {
@@ -307,7 +307,7 @@ export default function App() {
   // Delete trade
   const handleDeleteTrade = async (id: string) => {
     if (currentUser) {
-      const userId = currentUser.uid;
+      const userId = 'shared';
       try {
         await deleteDoc(doc(db, 'users', userId, 'trades', id));
       } catch (err) {
@@ -323,7 +323,7 @@ export default function App() {
   // Close trade fast
   const handleCloseTrade = async (id: string, exitPrice: number, exitTime: string, pnl: number) => {
     if (currentUser) {
-      const userId = currentUser.uid;
+      const userId = 'shared';
       try {
         await updateDoc(doc(db, 'users', userId, 'trades', id), {
           status: 'CLOSED',
@@ -344,7 +344,7 @@ export default function App() {
             exitTime,
             pnl
           };
-        }
+         }
         return t;
       });
       setTrades(updated);

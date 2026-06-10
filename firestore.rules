@@ -40,15 +40,15 @@ service cloud.firestore {
           && data.tp is number && data.tp >= 0
           && data.sl is number && data.sl >= 0
           && data.entryTime is string && data.entryTime.size() <= 64
-          && data.strategy is string && data.strategy.size() <= 200
-          && data.tags is list && data.tags.size() <= 30
+          && (data.strategy == null || (data.strategy is string && data.strategy.size() <= 200))
+          && (data.tags == null || (data.tags is list && data.tags.size() <= 30))
           && (data.status == 'OPEN' || data.status == 'CLOSED')
-          && (!('exitPrice' in data) || data.exitPrice is number)
-          && (!('exitTime' in data) || data.exitTime is string)
-          && (!('pnl' in data) || data.pnl is number)
-          && data.screenshotsBefore is list && data.screenshotsBefore.size() <= 10
-          && data.screenshotsAfter is list && data.screenshotsAfter.size() <= 10
-          && (!('notes' in data) || data.notes is string && data.notes.size() <= 5000);
+          && (!('exitPrice' in data) || data.exitPrice == null || data.exitPrice is number)
+          && (!('exitTime' in data) || data.exitTime == null || data.exitTime is string)
+          && (!('pnl' in data) || data.pnl == null || data.pnl is number)
+          && (data.screenshotsBefore == null || (data.screenshotsBefore is list && data.screenshotsBefore.size() <= 10))
+          && (data.screenshotsAfter == null || (data.screenshotsAfter is list && data.screenshotsAfter.size() <= 10))
+          && (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 5000));
     }
 
     // Whitelist rules helpers
@@ -81,8 +81,23 @@ service cloud.firestore {
         && getWhitelistData(request.auth.token.email).role == 'viewer';
     }
 
+    function isWhitelistedUser() {
+      return isSignedIn() 
+        && request.auth.token.email != null 
+        && (
+          request.auth.token.email == 'wangechigodfrey77@gmail.com'
+          || isWhitelisted(request.auth.token.email)
+        );
+    }
+
     // Whitelist collection rules
     match /whitelist/{email} {
+      // Allow bootstrap admin to initialize their own whitelist profile
+      allow create, update: if isSignedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email == 'wangechigodfrey77@gmail.com'
+        && email == 'wangechigodfrey77@gmail.com';
+
       // Whitelisted admins can read, create, update, delete all whitelist entries
       allow read, write: if isWhitelistedAndAdmin();
       // Any authenticated user can fetch their own whitelist record
@@ -93,25 +108,25 @@ service cloud.firestore {
 
     // User Profile
     match /users/{userId} {
-      allow get: if isOwner(userId) && (isWhitelistedAndAdmin() || isWhitelistedAndViewer());
-      allow create: if isOwner(userId) && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
-      allow update: if isOwner(userId) && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
-      allow delete: if isOwner(userId) && isWhitelistedAndAdmin();
+      allow get: if (isOwner(userId) || userId == 'shared') && isWhitelistedUser();
+      allow create: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
+      allow update: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
+      allow delete: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin();
 
       // Subcollection: Trades
       match /trades/{tradeId} {
-        allow get, list: if isOwner(userId) && (isWhitelistedAndAdmin() || isWhitelistedAndViewer());
+        allow get, list: if (isOwner(userId) || userId == 'shared') && isWhitelistedUser();
         
-        allow create: if isOwner(userId) 
+        allow create: if (isOwner(userId) || userId == 'shared') 
           && isWhitelistedAndAdmin()
           && isValidId(tradeId)
           && isValidTrade(request.resource.data);
 
-        allow update: if isOwner(userId)
+        allow update: if (isOwner(userId) || userId == 'shared')
           && isWhitelistedAndAdmin()
           && isValidTrade(request.resource.data);
 
-        allow delete: if isOwner(userId) && isWhitelistedAndAdmin();
+        allow delete: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin();
       }
     }
   }

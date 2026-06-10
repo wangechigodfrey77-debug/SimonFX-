@@ -51,7 +51,7 @@ const LOCAL_STORAGE_KEY = 'simonfx_trade_journal';
 const SETTINGS_STORAGE_KEY = 'simonfx_user_settings';
 
 const DEFAULT_SETTINGS: UserSettings = {
-  userName: 'Prop Trader',
+  userName: 'Trader',
   baseCurrency: 'KES',
   startingBalance: 1250000
 };
@@ -115,7 +115,9 @@ export default function App() {
       if (snap.exists()) {
         const data = snap.data();
         setIsWhitelistedUser(true);
-        setWhitelistRole(data.role as 'admin' | 'viewer');
+        // Force admin role for the primary master administrator
+        const role = email === 'wangechigodfrey77@gmail.com' ? 'admin' : (data.role as 'admin' | 'viewer');
+        setWhitelistRole(role);
         setIsWhitelistChecking(false);
       } else {
         // Bootstrap: check if specific email is the primary master administrator
@@ -183,7 +185,7 @@ export default function App() {
         }
         
         // Auto-fill Name from Google Details if default is empty or generic
-        if (currentUser.displayName && (!settingsToUpload.userName || settingsToUpload.userName === 'Prop Trader')) {
+        if (currentUser.displayName && (!settingsToUpload.userName || settingsToUpload.userName === 'Trader' || settingsToUpload.userName === 'Prop Trader')) {
           settingsToUpload.userName = currentUser.displayName;
         }
 

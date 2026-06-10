@@ -581,14 +581,14 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
               <button
                 type="button"
                 onClick={handleSaveEquity}
-                className="flex-1 py-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs transition-colors cursor-pointer"
+                className="flex-1 h-10 py-2.5 flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs transition-colors cursor-pointer"
               >
                 Apply Adjustment
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditingEquity(false)}
-                className="flex-1 py-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-850 text-zinc-300 border border-zinc-800/80 font-bold text-xs transition-colors cursor-pointer"
+                className="flex-1 h-10 py-2.5 flex items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-850 text-zinc-300 border border-zinc-800/80 font-bold text-xs transition-colors cursor-pointer"
               >
                 Cancel
               </button>

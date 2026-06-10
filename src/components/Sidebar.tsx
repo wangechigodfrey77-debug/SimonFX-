@@ -70,7 +70,7 @@ export default function Sidebar({
   }
 
   return (
-    <aside id="app-sidebar" className="w-80 bg-zinc-950 border-r border-zinc-900 flex flex-col justify-between h-screen sticky top-0 text-zinc-100 shrink-0 select-none">
+    <aside id="app-sidebar" className="w-full md:w-80 bg-zinc-950 border-r border-zinc-900 flex flex-col justify-between h-full md:h-screen md:sticky md:top-0 text-zinc-100 shrink-0 select-none overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {/* Top Brand / Header */}
       <div className="p-6">
         <div className="flex items-center gap-3">

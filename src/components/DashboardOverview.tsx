@@ -178,7 +178,7 @@ export default function DashboardOverview({ trades, settings, onAddTradeClick, s
   };
 
   return (
-    <div id="dashboard-view" className="space-y-6 font-sans text-zinc-100 p-8 max-w-7xl mx-auto">
+    <div id="dashboard-view" className="space-y-6 font-sans text-zinc-100 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
       {/* Header Info */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-900 pb-6">
         <div>

@@ -89,7 +89,7 @@ export default function RiskCalculator({ settings }: RiskCalculatorProps) {
   }, [balance, riskPercent, pair, inputMode, stopLossPips, calcEntryPrice, calcSlPrice]);
 
   return (
-    <div id="risk-calculator" className="space-y-6 font-sans text-zinc-100 p-8 max-w-4xl mx-auto select-none">
+    <div id="risk-calculator" className="space-y-6 font-sans text-zinc-100 p-4 sm:p-6 md:p-8 max-w-4xl mx-auto select-none">
       
       {/* Header */}
       <div className="border-b border-zinc-900 pb-6">

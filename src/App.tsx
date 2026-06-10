@@ -547,7 +547,7 @@ export default function App() {
           onClick={() => setIsSidebarOpen(false)}
         >
           <div 
-            className="w-85 h-full"
+            className="w-80 max-w-[85vw] h-full"
             onClick={(e) => e.stopPropagation()}
           >
             <Sidebar

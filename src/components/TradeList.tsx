@@ -159,7 +159,7 @@ export default function TradeList({ trades, settings, onEditTrade, onDeleteTrade
   };
 
   return (
-    <div id="trades-list-view" className="space-y-6 font-sans text-zinc-100 p-8 max-w-7xl mx-auto select-none">
+    <div id="trades-list-view" className="space-y-6 font-sans text-zinc-100 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto select-none">
       
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-900 pb-6">

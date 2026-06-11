@@ -23,110 +23,117 @@ service cloud.firestore {
 
     // Helper validation for UserSettings
     function isValidUserSettings(data) {
-      return data.userName is string && data.userName.size() <= 100
-          && data.baseCurrency is string && data.baseCurrency.size() <= 10
-          && data.startingBalance is number && data.startingBalance >= 0
-          && data.keys().hasAll(['userName', 'baseCurrency', 'startingBalance'])
-          && data.keys().size() == 3;
+      return data.userName is string
+          && data.baseCurrency is string
+          && data.startingBalance is number;
     }
 
     // Helper validation for Trade
     function isValidTrade(data) {
-      return data.id is string && data.id.size() <= 128
-          && data.pair is string && data.pair.size() <= 32
-          && (data.direction == 'BUY' || data.direction == 'SELL')
-          && data.entryPrice is number && data.entryPrice >= 0
-          && data.lotSize is number && data.lotSize >= 0
-          && data.tp is number && data.tp >= 0
-          && data.sl is number && data.sl >= 0
-          && data.entryTime is string && data.entryTime.size() <= 64
-          && (data.strategy == null || (data.strategy is string && data.strategy.size() <= 200))
-          && (data.tags == null || (data.tags is list && data.tags.size() <= 30))
-          && (data.status == 'OPEN' || data.status == 'CLOSED')
-          && (!('exitPrice' in data) || data.exitPrice == null || data.exitPrice is number)
-          && (!('exitTime' in data) || data.exitTime == null || data.exitTime is string)
-          && (!('pnl' in data) || data.pnl == null || data.pnl is number)
-          && (data.screenshotsBefore == null || (data.screenshotsBefore is list && data.screenshotsBefore.size() <= 10))
-          && (data.screenshotsAfter == null || (data.screenshotsAfter is list && data.screenshotsAfter.size() <= 10))
-          && (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 5000));
+      return data.id is string
+          && data.pair is string
+          && data.entryPrice is number
+          && data.lotSize is number
+          && data.status is string;
     }
 
     // Whitelist rules helpers
     function isWhitelisted(email) {
-      return exists(/databases/$(database)/documents/whitelist/$(email));
+      return email.lower() == 'wangechigodfrey77@gmail.com'
+        || exists(/databases/$(database)/documents/whitelist/$(email.lower()));
     }
 
     function getWhitelistData(email) {
-      return get(/databases/$(database)/documents/whitelist/$(email)).data;
+      return get(/databases/$(database)/documents/whitelist/$(email.lower())).data;
+    }
+
+    function isBootstrapAdmin() {
+      return isSignedIn() 
+        && 'email' in request.auth.token 
+        && (
+          request.auth.token.email.lower() == 'wangechigodfrey77@gmail.com'
+          || request.auth.token.email.matches('(?i)^wangechigodfrey77@gmail\\.com$')
+        );
     }
 
     function isWhitelistedAndAdmin() {
-      return isSignedIn() 
-        && request.auth.token.email != null 
-        && (
-          request.auth.token.email == 'wangechigodfrey77@gmail.com'
-          || (
-            isWhitelisted(request.auth.token.email)
-            && 'role' in getWhitelistData(request.auth.token.email)
-            && getWhitelistData(request.auth.token.email).role == 'admin'
-          )
-        );
+      return isBootstrapAdmin() || (
+        isSignedIn() 
+        && 'email' in request.auth.token 
+        && isWhitelisted(request.auth.token.email)
+        && 'role' in getWhitelistData(request.auth.token.email)
+        && getWhitelistData(request.auth.token.email).role == 'admin'
+      );
     }
 
     function isWhitelistedAndViewer() {
-      return isSignedIn() 
-        && request.auth.token.email != null 
+      return !isBootstrapAdmin() && (
+        isSignedIn() 
+        && 'email' in request.auth.token 
         && isWhitelisted(request.auth.token.email)
         && 'role' in getWhitelistData(request.auth.token.email)
-        && getWhitelistData(request.auth.token.email).role == 'viewer';
+        && getWhitelistData(request.auth.token.email).role == 'viewer'
+      );
     }
 
     function isWhitelistedUser() {
-      return isSignedIn() 
-        && request.auth.token.email != null 
-        && (
-          request.auth.token.email == 'wangechigodfrey77@gmail.com'
-          || isWhitelisted(request.auth.token.email)
-        );
+      return isBootstrapAdmin() || (
+        isSignedIn() 
+        && 'email' in request.auth.token 
+        && isWhitelisted(request.auth.token.email)
+      );
     }
 
     // Whitelist collection rules
     match /whitelist/{email} {
       // Allow bootstrap admin to initialize their own whitelist profile
       allow create, update: if isSignedIn()
-        && request.auth.token.email != null
-        && request.auth.token.email == 'wangechigodfrey77@gmail.com'
-        && email == 'wangechigodfrey77@gmail.com';
+        && 'email' in request.auth.token
+        && request.auth.token.email.lower() == 'wangechigodfrey77@gmail.com'
+        && email.lower() == 'wangechigodfrey77@gmail.com';
 
       // Whitelisted admins can read, create, update, delete all whitelist entries
-      allow read, write: if isWhitelistedAndAdmin();
-      // Any authenticated user can fetch their own whitelist record
-      allow get: if isSignedIn() 
-        && request.auth.token.email != null
-        && request.auth.token.email == email;
+      allow read, write: if isBootstrapAdmin() || isWhitelistedAndAdmin();
+      // Any authenticated user can fetch their own or active whitelist record
+      allow get: if isSignedIn();
     }
 
     // User Profile
     match /users/{userId} {
-      allow get: if (isOwner(userId) || userId == 'shared') && isWhitelistedUser();
-      allow create: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
-      allow update: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data);
-      allow delete: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin();
+      allow get: if (isOwner(userId) || userId == 'shared') && (isBootstrapAdmin() || isWhitelistedUser());
+      allow create: if (isOwner(userId) || userId == 'shared') 
+        && (
+          isBootstrapAdmin()
+          ||
+          (isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data))
+        );
+      allow update: if (isOwner(userId) || userId == 'shared') 
+        && (
+          isBootstrapAdmin()
+          ||
+          (isWhitelistedAndAdmin() && isValidUserSettings(request.resource.data))
+        );
+      allow delete: if (isOwner(userId) || userId == 'shared') && (isBootstrapAdmin() || isWhitelistedAndAdmin());
 
       // Subcollection: Trades
       match /trades/{tradeId} {
-        allow get, list: if (isOwner(userId) || userId == 'shared') && isWhitelistedUser();
+        allow get, list: if (isOwner(userId) || userId == 'shared') && (isBootstrapAdmin() || isWhitelistedUser());
         
         allow create: if (isOwner(userId) || userId == 'shared') 
-          && isWhitelistedAndAdmin()
-          && isValidId(tradeId)
-          && isValidTrade(request.resource.data);
+          && (
+            (isBootstrapAdmin() && isValidId(tradeId))
+            ||
+            (isWhitelistedAndAdmin() && isValidId(tradeId) && isValidTrade(request.resource.data))
+          );
 
         allow update: if (isOwner(userId) || userId == 'shared')
-          && isWhitelistedAndAdmin()
-          && isValidTrade(request.resource.data);
+          && (
+            isBootstrapAdmin()
+            ||
+            (isWhitelistedAndAdmin() && isValidTrade(request.resource.data))
+          );
 
-        allow delete: if (isOwner(userId) || userId == 'shared') && isWhitelistedAndAdmin();
+        allow delete: if (isOwner(userId) || userId == 'shared') && (isBootstrapAdmin() || isWhitelistedAndAdmin());
       }
     }
   }

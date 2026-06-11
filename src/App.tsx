@@ -123,11 +123,20 @@ export default function App() {
         // Bootstrap: check if specific email is the primary master administrator
         if (email === 'wangechigodfrey77@gmail.com') {
           const bootstrapData = {
-            email: email,
+            email: currentUser.email || email,
             role: 'admin',
             addedAt: new Date().toISOString()
           };
-          setDoc(whitelistDocRef, bootstrapData)
+          
+          const writes = [setDoc(whitelistDocRef, { ...bootstrapData, email })];
+          if (currentUser.email && currentUser.email !== email) {
+            writes.push(setDoc(doc(db, 'whitelist', currentUser.email), {
+              ...bootstrapData,
+              email: currentUser.email
+            }));
+          }
+
+          Promise.all(writes)
             .then(() => {
               setIsWhitelistedUser(true);
               setWhitelistRole('admin');
@@ -244,7 +253,7 @@ export default function App() {
       unsubscribeSettings();
       unsubscribeTrades();
     };
-  }, [currentUser]);
+  }, [currentUser, isWhitelistedUser]);
 
   // Auth Operations
   const handleGoogleSignIn = async () => {

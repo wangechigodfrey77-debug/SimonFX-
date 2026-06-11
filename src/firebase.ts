@@ -41,8 +41,42 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorCode = (error as { code?: string })?.code || (error as { name?: string })?.name || 'UNKNOWN_CODE';
+  const errorDetails = {
+    code: errorCode,
+    message: errorMessage,
+    operationType,
+    path,
+    currentUser: auth.currentUser ? {
+      uid: auth.currentUser.uid,
+      email: auth.currentUser.email,
+      emailVerified: auth.currentUser.emailVerified,
+      isAnonymous: auth.currentUser.isAnonymous,
+      providerId: auth.currentUser.providerId,
+      providerData: auth.currentUser.providerData.map(p => ({ providerId: p.providerId, email: p.email }))
+    } : 'Not Authenticated'
+  };
+
+  const isPermissionDenied = errorCode === 'permission-denied' || 
+                             errorMessage.includes('permission-denied') || 
+                             errorMessage.toLowerCase().includes('permission') || 
+                             errorMessage.toLowerCase().includes('insufficient');
+
+  if (isPermissionDenied) {
+    console.error('❌ === FIRESTORE PERMISSION DENIED ERROR DETECTED ===');
+    console.error(`  - Path: ${path}`);
+    console.error(`  - Operation: ${operationType}`);
+    console.error(`  - Error Code: ${errorCode}`);
+    console.error(`  - Error Message: ${errorMessage}`);
+    console.error(`  - Active User:`, JSON.stringify(errorDetails.currentUser, null, 2));
+    console.error('====================================================');
+  } else {
+    console.error('❌ Firestore Error:', JSON.stringify(errorDetails, null, 2));
+  }
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -57,7 +91,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+
   throw new Error(JSON.stringify(errInfo));
 }
 
